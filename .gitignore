@@ -1,0 +1,17 @@
+/target
+**/target
+
+.env
+
+node_modules
+dist
+.vite
+
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen
+
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json

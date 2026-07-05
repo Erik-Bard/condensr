@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO links (long_url) VALUES ($1)\n         ON CONFLICT (long_url) DO UPDATE SET long_url = EXCLUDED.long_url\n         RETURNING id, (xmax = 0) AS inserted",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "inserted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "aa4c8d68e9f04dcb7618e7617f7a667f324c85fb930534b968cc9a65e97cc3f5"
+}
