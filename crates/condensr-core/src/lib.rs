@@ -1,4 +1,5 @@
-pub const ALPHABET: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+pub const ALPHABET: &[u8] =
+    b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 pub const BASE: u64 = 62;
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -58,7 +59,11 @@ mod tests {
     #[test]
     fn round_trips_any_id() {
         for id in [0u64, 1, 42, 1000, 999_999, u64::MAX] {
-            assert_eq!(decode(&encode(id)), Ok(id), "round trip failed for {id}");
+            assert_eq!(
+                decode(&encode(id)),
+                Ok(id),
+                "round trip failed for {id}"
+            );
         }
     }
 

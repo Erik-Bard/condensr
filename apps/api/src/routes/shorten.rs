@@ -1,4 +1,7 @@
-use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{
+    Json, Router, extract::State, http::StatusCode, response::IntoResponse,
+    routing::post,
+};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -32,8 +35,8 @@ async fn shorten(
     State(state): State<AppState>,
     Json(req): Json<ShortenRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let long_url =
-        normalize_url(&req.url).map_err(|reason| AppError::bad_request("invalid_url", reason))?;
+    let long_url = normalize_url(&req.url)
+        .map_err(|reason| AppError::bad_request("invalid_url", reason))?;
 
     let row = sqlx::query!(
         "INSERT INTO links (long_url) VALUES ($1)
@@ -67,7 +70,10 @@ mod tests {
     #[test]
     fn accepts_http_and_https() {
         assert!(normalize_url("http://example.com").is_ok());
-        assert!(normalize_url("https://example.com/very/long/path?q=1#frag").is_ok());
+        assert!(
+            normalize_url("https://example.com/very/long/path?q=1#frag")
+                .is_ok()
+        );
     }
 
     #[test]

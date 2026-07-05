@@ -24,7 +24,9 @@ pub struct ListLinksResponse {
     pub code: String,
 }
 
-async fn list_links(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+async fn list_links(
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
     let rows = sqlx::query!(
         "SELECT id, long_url, created_at FROM links ORDER BY created_at ASC LIMIT 100"
     )
@@ -51,7 +53,8 @@ async fn redirect(
     State(state): State<AppState>,
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
-    let Some(id) = decode(&code).ok().and_then(|id| i64::try_from(id).ok()) else {
+    let Some(id) = decode(&code).ok().and_then(|id| i64::try_from(id).ok())
+    else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 

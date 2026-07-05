@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 fn api_base() -> String {
-    std::env::var("CONDENSR_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string())
+    std::env::var("CONDENSR_API_URL")
+        .unwrap_or_else(|_| "http://localhost:8080".to_string())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,7 +60,9 @@ async fn shorten(
 }
 
 #[tauri::command]
-async fn list_links(client: State<'_, reqwest::Client>) -> Result<Vec<LinkItem>, String> {
+async fn list_links(
+    client: State<'_, reqwest::Client>,
+) -> Result<Vec<LinkItem>, String> {
     let resp = client
         .get(format!("{}/api/links", api_base()))
         .send()

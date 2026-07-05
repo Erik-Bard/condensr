@@ -6,9 +6,11 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Result<Self, anyhow::Error> {
-        let database_url = std::env::var("DATABASE_URL")
-            .map_err(|_| anyhow::anyhow!("DATABASE_URL must be set (see .env.example)"))?;
-        let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8080".into());
+        let database_url = std::env::var("DATABASE_URL").map_err(|_| {
+            anyhow::anyhow!("DATABASE_URL must be set (see .env.example)")
+        })?;
+        let base_url = std::env::var("BASE_URL")
+            .unwrap_or_else(|_| "http://localhost:8080".into());
         let app_port: u16 = std::env::var("PORT")
             .ok()
             .and_then(|p| p.parse().ok())

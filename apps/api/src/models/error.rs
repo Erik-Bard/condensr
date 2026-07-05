@@ -20,7 +20,10 @@ pub struct AppError {
 }
 
 impl AppError {
-    pub fn bad_request(error: &'static str, description: impl Into<String>) -> Self {
+    pub fn bad_request(
+        error: &'static str,
+        description: impl Into<String>,
+    ) -> Self {
         Self {
             status: StatusCode::BAD_REQUEST,
             error,

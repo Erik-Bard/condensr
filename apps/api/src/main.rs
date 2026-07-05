@@ -1,6 +1,8 @@
 use std::net::SocketAddr;
 
-use axum::{Json, Router, http::StatusCode, response::IntoResponse, routing::get};
+use axum::{
+    Json, Router, http::StatusCode, response::IntoResponse, routing::get,
+};
 use condensr_api::{AppState, config::Config, routes};
 
 #[tokio::main]
@@ -11,7 +13,9 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "condensr_api=debug,tower_http=debug,info".into()),
+                .unwrap_or_else(|_| {
+                    "condensr_api=debug,tower_http=debug,info".into()
+                }),
         )
         .init();
 
