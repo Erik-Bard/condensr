@@ -21,3 +21,11 @@ impl AppState {
         })
     }
 }
+
+pub fn build_router(state: AppState) -> axum::Router {
+    axum::Router::new()
+        .merge(routes::health::router())
+        .merge(routes::shorten::router())
+        .merge(routes::links::router())
+        .with_state(state)
+}

@@ -68,8 +68,21 @@ Read from the environment (a `.env` file is loaded in debug builds):
 ## Tests
 
 ```bash
+docker compose up -d db
 cargo test -p condensr-api -p condensr-core
 ```
+
+[`tests/api`](tests/api)
+holds HTTP contract tests covering every route's inputs, outputs, status
+codes, and error shapes (`tests/api/health.rs`, `shorten.rs`, `redirect.rs`,
+`links.rs`, `errors.rs`). They run in-process against the real `Router`
+(`tower::ServiceExt::oneshot`, no TCP) and each test gets its own throwaway
+Postgres database on the compose `db` server, created and migrated via the
+same [`pg_database::connect`](src/database/pg_database.rs) the app uses at
+startup, then dropped on teardown. Override the target server with
+`TEST_DATABASE_URL` (falls back to `DATABASE_URL`, then
+`postgres://condensr:condensr@localhost:5432/postgres`).
+
 
 ## sqlx offline query data
 

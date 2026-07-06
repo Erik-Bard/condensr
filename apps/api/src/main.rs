@@ -1,9 +1,6 @@
 use std::net::SocketAddr;
 
-use axum::{
-    Json, Router, http::StatusCode, response::IntoResponse, routing::get,
-};
-use condensr_api::{AppState, config::Config, routes};
+use condensr_api::{AppState, config::Config};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -23,11 +20,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = AppState::new(&app_config).await?;
 
-    let app = Router::new()
-        .route("/health", get(health))
-        .merge(routes::shorten::router())
-        .merge(routes::links::router())
-        .with_state(state);
+    let app = condensr_api::build_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], app_config.app_port));
     tracing::info!("condensr API listening on http://{addr}");
@@ -35,8 +28,4 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())
-}
-
-async fn health() -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({ "status": "ok" })))
 }
