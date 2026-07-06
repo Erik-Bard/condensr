@@ -19,6 +19,7 @@ pub struct LinkItem {
     pub long_url: String,
     pub created_at: String,
     pub code: String,
+    pub short_url: String,
 }
 
 #[derive(Serialize)]

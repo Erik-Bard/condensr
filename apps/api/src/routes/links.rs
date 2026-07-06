@@ -22,6 +22,7 @@ pub struct ListLinksResponse {
     pub long_url: String,
     pub created_at: String,
     pub code: String,
+    pub short_url: String,
 }
 
 async fn list_links(
@@ -37,9 +38,11 @@ async fn list_links(
         .into_iter()
         .map(|row| {
             let id: u64 = row.id.try_into()?;
+            let code = condensr_core::encode(id);
             Ok(ListLinksResponse {
                 id,
-                code: condensr_core::encode(id),
+                short_url: format!("{}/{}", state.base_url, code),
+                code,
                 long_url: row.long_url,
                 created_at: row.created_at.to_rfc3339(),
             })

@@ -1,0 +1,132 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+%grid-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 108px 76px;
+  align-items: center;
+}
+
+.section {
+  margin-top: 36px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.title {
+  @include overline(12px, 0.1em);
+  color: $text-dim;
+}
+
+.count {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  color: $text-faint;
+}
+
+.table {
+  border: 1px solid rgba(#fff, 0.07);
+  border-radius: 14px;
+  overflow: hidden;
+  background: $surface-table;
+}
+
+.head {
+  @extend %grid-row;
+  @include overline(10.5px, 0.08em);
+  padding: 11px 18px;
+  border-bottom: 1px solid $border-subtle;
+  color: $text-faint;
+}
+
+.headOpen {
+  text-align: right;
+}
+
+.row {
+  @extend %grid-row;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(#fff, 0.045);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(#fff, 0.02);
+  }
+}
+
+.rowNew,
+.rowNew:hover {
+  background: rgba(#fff, 0.035);
+  box-shadow: inset 3px 0 0 $text;
+  border-bottom-color: $border-subtle;
+}
+
+.cellShort {
+  @include truncate;
+  font-family: $font-mono;
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-soft;
+  padding-right: 16px;
+}
+
+.cellDest {
+  @include truncate;
+  font-size: 13px;
+  color: $text-dim;
+  padding-right: 16px;
+}
+
+.cellCreated {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  color: $text-dim;
+}
+
+.cellOpen {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.openBtn {
+  @include flex-center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(#fff, 0.07);
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(#fff, 0.18);
+  }
+}
+
+.rowNew {
+  .cellShort {
+    color: $text;
+  }
+
+  .cellDest {
+    color: $text-muted;
+  }
+
+  .cellCreated {
+    color: $text-soft;
+  }
+
+  .openBtn {
+    border-color: rgba(#fff, 0.1);
+    color: $text-soft;
+  }
+}

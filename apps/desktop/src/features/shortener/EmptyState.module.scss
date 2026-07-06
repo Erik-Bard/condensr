@@ -1,0 +1,42 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 24px;
+  border: 1px dashed rgba(#fff, 0.1);
+  border-radius: 14px;
+}
+
+.tile {
+  @include flex-center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: $surface;
+  border: 1px solid rgba(#fff, 0.08);
+  margin-bottom: 16px;
+
+  svg {
+    color: $text-muted;
+    opacity: 0.55;
+  }
+}
+
+.heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-soft;
+  margin-bottom: 6px;
+}
+
+.hint {
+  font-size: 13px;
+  color: $text-dim;
+  max-width: 280px;
+  line-height: 1.5;
+}

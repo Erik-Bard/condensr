@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin gradient-tile($size, $radius) {
+  width: $size;
+  height: $size;
+  border-radius: $radius;
+  background: linear-gradient(160deg, $surface-bright, #141416);
+  border: 1px solid $border;
+  box-shadow: inset 0 1px 0 rgba(#fff, 0.08);
+  @include flex-center;
+}
+
+@mixin overline($size, $tracking) {
+  font-size: $size;
+  text-transform: uppercase;
+  letter-spacing: $tracking;
+}

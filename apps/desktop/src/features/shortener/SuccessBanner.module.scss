@@ -1,0 +1,70 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.banner {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 18px;
+  border-radius: 12px;
+  background: $surface-raised;
+  border: 1px solid rgba(#fff, 0.1);
+  animation: rise 0.35s ease;
+
+  > svg {
+    flex-shrink: 0;
+    color: $text;
+  }
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  @include overline(11px, 0.09em);
+  color: $text-dim;
+  margin-bottom: 3px;
+}
+
+.url {
+  @include truncate;
+  font-family: $font-mono;
+  font-size: 15px;
+  font-weight: 500;
+  color: $text;
+}
+
+.copyBtn {
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid $border-strong;
+  border-radius: 9px;
+  background: $text;
+  color: $ink;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+
+  &:hover {
+    filter: brightness(0.93);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

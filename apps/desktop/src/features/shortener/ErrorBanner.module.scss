@@ -1,0 +1,19 @@
+@use "../../styles/variables" as *;
+
+.banner {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba($error, 0.08);
+  border: 1px solid rgba($error, 0.22);
+  font-size: 13.5px;
+  color: $error-text;
+
+  svg {
+    flex-shrink: 0;
+    color: $error;
+  }
+}
