@@ -66,3 +66,8 @@ Run the tests with:
 ```bash
 cargo test -p condensr-api -p condensr-core
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). You may use, modify,
+and self-host it, subject to the terms of that license.
