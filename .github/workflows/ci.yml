@@ -2,7 +2,11 @@ name: Rust CI
 
 on:
   push:
+    paths:
+      - "crates/condensr-core/**"
   pull_request:
+    paths:
+      - "crates/condensr-core/**"
   workflow_dispatch:
 
 permissions:
