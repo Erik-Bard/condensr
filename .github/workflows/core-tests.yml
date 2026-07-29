@@ -1,4 +1,4 @@
-name: Rust CI
+name: Test condensr-core
 
 on:
   push:
@@ -14,7 +14,6 @@ permissions:
 
 jobs:
   test:
-    name: Test condensr-core
     runs-on: ubuntu-latest
 
     steps:
@@ -32,5 +31,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Run condensr-core tests
+      - name: Run tests
         run: cargo test -p condensr-core
