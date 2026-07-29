@@ -1,5 +1,9 @@
 # condensr
 
+[![Core CI](https://github.com/Erik-Bard/condensr/actions/workflows/core-tests.yml/badge.svg?branch=main)](https://github.com/Erik-Bard/condensr/actions/workflows/core-tests.yml?query=branch%3Amain)
+[![API CI](https://github.com/Erik-Bard/condensr/actions/workflows/api-tests.yml/badge.svg?branch=main)](https://github.com/Erik-Bard/condensr/actions/workflows/api-tests.yml?query=branch%3Amain)
+[![Desktop CI](https://github.com/Erik-Bard/condensr/actions/workflows/desktop-ci.yml/badge.svg?branch=main)](https://github.com/Erik-Bard/condensr/actions/workflows/desktop-ci.yml?query=branch%3Amain)
+
 A URL shortener, built in Rust.
 
 | Part                                             | What it is                                                                 | Docs                                     |

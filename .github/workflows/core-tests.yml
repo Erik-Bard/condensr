@@ -1,4 +1,4 @@
-name: Test condensr-core
+name: Core CI
 
 on:
   push:
