@@ -89,25 +89,6 @@ Set at least `DATABASE_URL` and `BASE_URL` in `.env`; see
 pin production deployments to that exact version (or to the image digest shown
 on the package page). `latest` is provided for evaluation only.
 
-The first published package is private by default. A maintainer must make it
-public once in its GitHub package settings; after that, users can pull it
-without signing in.
-
-## Releasing
-
-Releases are tag-driven. Once the desired commit is on `main` and its checks
-have passed, create and push a semantic-version tag:
-
-```bash
-git tag -a v1.0.0 -m "v1.0.0"
-git push origin v1.0.0
-```
-
-The release workflow verifies the tagged code, builds and publishes the API
-image, generates build provenance, then creates the GitHub Release with
-generated notes. It publishes the image tags `1.0.0` and `1.0`; stable releases
-also update `latest`. Pre-releases such as `v1.1.0-rc.1` do not update `latest`.
-There is no manual Docker build, registry login, or GitHub Release step.
 
 ## License
 
