@@ -4,9 +4,27 @@ on:
   push:
     paths:
       - "apps/api/**"
+      - "crates/condensr-core/**"
+      - ".cargo/**"
+      - ".github/workflows/api-tests.yml"
+      - ".github/workflows/release.yml"
+      - ".dockerignore"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "docker-compose.yml"
+      - "rust-toolchain.toml"
   pull_request:
     paths:
       - "apps/api/**"
+      - "crates/condensr-core/**"
+      - ".cargo/**"
+      - ".github/workflows/api-tests.yml"
+      - ".github/workflows/release.yml"
+      - ".dockerignore"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "docker-compose.yml"
+      - "rust-toolchain.toml"
   workflow_dispatch:
 
 permissions:
@@ -23,6 +41,9 @@ jobs:
 
       - name: Check formatting
         run: cargo fmt --check -p condensr-api
+
+      - name: Validate development Compose
+        run: docker compose config --quiet
 
   clippy:
     name: Run Clippy
@@ -47,13 +68,18 @@ jobs:
         run: cargo clippy -p condensr-api --all-targets -- -D warnings
 
   test:
-    name: Run tests
+    name: Run tests (PostgreSQL ${{ matrix.postgres }})
     runs-on: ubuntu-latest
     needs: [format, clippy]
 
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["14", "17"]
+
     services:
       postgres:
-        image: postgres:17
+        image: postgres:${{ matrix.postgres }}
         env:
           POSTGRES_USER: condensr
           POSTGRES_PASSWORD: condensr

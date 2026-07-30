@@ -55,6 +55,7 @@ docker compose up -d db
 
 cp .env.example .env
 
+set -a; . ./.env; set +a
 cargo run -p condensr-api
 
 cd apps/desktop && pnpm install && pnpm tauri dev
@@ -73,22 +74,34 @@ cargo test -p condensr-api -p condensr-core
 
 ## Released API images
 
-Every stable release publishes a multi-architecture (`linux/amd64` and
-`linux/arm64`) API image to GitHub Container Registry. The image requires an
-existing Postgres database; it applies this project's migrations at startup.
+Every stable release publishes a public multi-architecture (`linux/amd64` and
+`linux/arm64`) API image to GitHub Container Registry. The image supports
+PostgreSQL 14 or later and requires credentials that can apply this project's
+migrations at startup. CI verifies PostgreSQL 14 and 17; the local Compose
+development database uses PostgreSQL 17.
+
+The default deployment contract is direct environment injection:
 
 ```bash
 docker run --detach --name condensr-api --restart unless-stopped \
   --publish 8080:8080 \
-  --env-file .env \
-  ghcr.io/erik-bard/condensr:1.0.0
+  --env DATABASE_URL='postgres://user:password@database.example:5432/condensr?sslmode=require' \
+  --env BASE_URL='https://short.example' \
+  ghcr.io/erik-bard/condensr:VERSION
 ```
 
-Set at least `DATABASE_URL` and `BASE_URL` in `.env`; see
-[`.env.example`](.env.example). Replace `1.0.0` with a published version and
-pin production deployments to that exact version (or to the image digest shown
-on the package page). `latest` is provided for evaluation only.
+Replace `VERSION` with a published semantic version. Pin production deployments
+to that exact version or to the digest shown on the package page. `latest` is
+provided for evaluation only.
 
+Docker can read variables from a host file and inject them into the container:
+
+```bash
+docker run --detach --name condensr-api --restart unless-stopped \
+  --publish 8080:8080 \
+  --env-file ./condensr.env \
+  ghcr.io/erik-bard/condensr:VERSION
+```
 
 ## License
 

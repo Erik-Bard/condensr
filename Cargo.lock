@@ -584,7 +584,6 @@ dependencies = [
  "axum",
  "chrono",
  "condensr-core",
- "dotenvy",
  "http-body-util",
  "serde",
  "serde_json",

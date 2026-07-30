@@ -60,9 +60,16 @@ Installers and the standalone binary land in
 ## Docker (web build only)
 
 The [`Dockerfile`](Dockerfile) builds the Vite frontend and serves it with
-nginx, proxying `/api` to the `api` compose service. It is intended to be run
-via the root compose file:
+nginx, proxying `/api` to the `api` Compose service. The root Compose file is
+for local development:
 
 ```bash
 docker compose up -d --build web
+```
+
+To build the web image for a manually managed deployment, run this from the
+repository root and provide a network route named `api` to the backend:
+
+```bash
+docker build --file apps/desktop/Dockerfile --tag condensr-web:local .
 ```

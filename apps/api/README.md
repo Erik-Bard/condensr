@@ -34,7 +34,7 @@ curl -X POST http://localhost:8080/api/shorten \
 ## Prerequisites
 
 - Rust 1.94+
-- Docker (for Postgres) — or a local Postgres 17
+- Docker (for PostgreSQL) — or an existing PostgreSQL 14 or later database
 - Optional: [`sqlx-cli`](https://crates.io/crates/sqlx-cli) for offline query
   metadata and migration tooling (`cargo install sqlx-cli --no-default-features --features rustls,postgres`)
 
@@ -47,6 +47,7 @@ docker compose up -d db
 
 cp .env.example .env
 
+set -a; . ./.env; set +a
 cargo run -p condensr-api
 ```
 
@@ -56,14 +57,23 @@ and `curl http://localhost:8080/health` returns `{"status":"ok"}`.
 
 ## Configuration
 
-Read from the environment (a `.env` file is loaded in debug builds):
+Configuration comes from the process environment by default:
 
-| Variable       | Default                 | Description                                  |
-| -------------- | ----------------------- | -------------------------------------------- |
-| `DATABASE_URL` | — (required)            | Postgres connection string                   |
-| `BASE_URL`     | `http://localhost:8080` | Public origin used to build short links      |
-| `PORT`         | `8080`                  | Port the API listens on                      |
-| `RUST_LOG`     | —                       | Log filter, e.g. `condensr_api=debug,info`   |
+| Variable       | Default                  | Description                                     |
+| -------------- | ------------------------ | ----------------------------------------------- |
+| `DATABASE_URL` | — (required)             | Existing PostgreSQL 14 or later database URL    |
+| `BASE_URL`     | — (required)             | HTTP(S) public origin used to build short links |
+| `PORT`         | `8080`                   | Port the API listens on                         |
+| `RUST_LOG`     | `condensr_api=info,info` | Tracing filter                                  |
+
+`DATABASE_URL` accepts `postgres://` and `postgresql://` URLs. The database
+must already exist and be PostgreSQL 14 or later; the credentials must be able
+to create and update the application schema. CI verifies PostgreSQL 14 and 17.
+Managed PostgreSQL TLS endpoints can use query parameters such as
+`sslmode=require`.
+
+`BASE_URL` must be an HTTP(S) origin without a path, query, fragment,
+or embedded credentials. An explicitly supplied invalid `PORT` fails startup.
 
 ## Tests
 
@@ -77,9 +87,9 @@ holds HTTP contract tests covering every route's inputs, outputs, status
 codes, and error shapes (`tests/api/health.rs`, `shorten.rs`, `redirect.rs`,
 `links.rs`, `errors.rs`). They run in-process against the real `Router`
 (`tower::ServiceExt::oneshot`, no TCP) and each test gets its own throwaway
-Postgres database on the compose `db` server, created and migrated via the
-same [`pg_database::connect`](src/database/pg_database.rs) the app uses at
-startup, then dropped on teardown. Override the target server with
+PostgreSQL database on the compose `db` server, created by the test harness and
+migrated via the same [`pg_database::connect`](src/database/pg_database.rs) the
+app uses at startup, then dropped on teardown. Override the target server with
 `TEST_DATABASE_URL` (falls back to `DATABASE_URL`, then
 `postgres://condensr:condensr@localhost:5432/postgres`).
 
@@ -118,3 +128,15 @@ Or just use compose, which wires up Postgres too:
 ```bash
 docker compose up -d --build api
 ```
+
+The released image is designed to run independently of the repository stack:
+
+```bash
+docker run --detach --publish 8080:8080 \
+  --env DATABASE_URL='postgres://user:password@database.example:5432/condensr?sslmode=require' \
+  --env BASE_URL='https://short.example' \
+  ghcr.io/erik-bard/condensr:VERSION
+```
+
+Docker CLI `--env-file` injects a host file as process environment. The root
+`docker-compose.yml` remains a local development `db + api + web` workflow.

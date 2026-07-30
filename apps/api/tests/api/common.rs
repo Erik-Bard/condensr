@@ -7,7 +7,9 @@ use axum::{
 };
 use condensr_api::AppState;
 use http_body_util::BodyExt;
-use sqlx::{Connection, PgConnection, PgPool};
+use sqlx::{
+    Connection, PgConnection, PgPool, Postgres, migrate::MigrateDatabase,
+};
 use tokio::sync::Mutex;
 use tower::ServiceExt;
 use url::Url;
@@ -24,7 +26,6 @@ pub struct TestApp {
 }
 
 fn server_url() -> Url {
-    let _ = dotenvy::dotenv();
     let raw = std::env::var("TEST_DATABASE_URL")
         .or_else(|_| std::env::var("DATABASE_URL"))
         .unwrap_or_else(|_| {
@@ -33,25 +34,33 @@ fn server_url() -> Url {
     Url::parse(&raw).expect("database url must be a valid URL")
 }
 
-pub async fn spawn_app() -> TestApp {
+pub fn unique_database_url(prefix: &str) -> Url {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .subsec_nanos();
-    let db_name = format!(
-        "condensr_test_{}_{}_{}",
+    let database_name = format!(
+        "condensr_{prefix}_{}_{}_{}",
         std::process::id(),
         DB_COUNTER.fetch_add(1, Ordering::Relaxed),
         nanos
     );
+    let mut database_url = server_url();
+    database_url.set_path(&database_name);
+    database_url
+}
 
-    let mut db_url = server_url();
-    db_url.set_path(&db_name);
+pub async fn spawn_app() -> TestApp {
+    let db_url = unique_database_url("test");
+    let db_name = db_url.path().trim_start_matches('/').to_string();
     let mut admin_url = server_url();
     admin_url.set_path("postgres");
 
     let pool = {
         let _guard = DB_SETUP.lock().await;
+        Postgres::create_database(db_url.as_str())
+            .await
+            .expect("failed to create test database");
         condensr_api::database::pg_database::connect(db_url.as_str())
             .await
             .expect(

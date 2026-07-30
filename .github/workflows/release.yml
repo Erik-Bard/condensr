@@ -14,12 +14,17 @@ env:
 
 jobs:
   verify:
-    name: Verify release tag
+    name: Verify release tag (PostgreSQL ${{ matrix.postgres }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["14", "17"]
 
     services:
       postgres:
-        image: postgres:17
+        image: postgres:${{ matrix.postgres }}
         env:
           POSTGRES_USER: condensr
           POSTGRES_PASSWORD: condensr
@@ -47,10 +52,143 @@ jobs:
           TEST_DATABASE_URL: postgres://condensr:condensr@localhost:5432/postgres
         run: cargo test -p condensr-api -p condensr-core
 
+      - name: Validate development Compose
+        run: docker compose config --quiet
+
+  container-smoke:
+    name: Smoke-test API image
+    runs-on: ubuntu-latest
+    needs: verify
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+
+      - name: Build API image
+        run: docker build --file apps/api/Dockerfile --tag condensr-api:smoke .
+
+      - name: Prepare TLS-enabled PostgreSQL
+        run: |
+          mkdir --parents "$RUNNER_TEMP/condensr-smoke/postgres"
+          openssl req -new -x509 -days 1 -nodes \
+            -out "$RUNNER_TEMP/condensr-smoke/postgres/server.crt" \
+            -keyout "$RUNNER_TEMP/condensr-smoke/postgres/server.key" \
+            -subj "/CN=condensr-postgres-smoke"
+          sudo chown --recursive 999:999 "$RUNNER_TEMP/condensr-smoke/postgres"
+          sudo chmod 600 "$RUNNER_TEMP/condensr-smoke/postgres/server.key"
+          docker network create condensr-smoke
+          docker run --detach \
+            --name condensr-postgres-smoke \
+            --network condensr-smoke \
+            --env POSTGRES_USER=condensr \
+            --env POSTGRES_PASSWORD=condensr \
+            --env POSTGRES_DB=condensr \
+            --volume "$RUNNER_TEMP/condensr-smoke/postgres:/certs:ro" \
+            postgres:17 \
+            -c ssl=on \
+            -c ssl_cert_file=/certs/server.crt \
+            -c ssl_key_file=/certs/server.key
+          for attempt in $(seq 1 30); do
+            if docker exec condensr-postgres-smoke pg_isready -U condensr -d condensr; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs condensr-postgres-smoke
+          exit 1
+
+      - name: Smoke-test injected environment
+        run: |
+          docker run --detach \
+            --name condensr-api-direct \
+            --network condensr-smoke \
+            --publish 18080:8080 \
+            --env 'DATABASE_URL=postgres://condensr:condensr@condensr-postgres-smoke:5432/condensr?sslmode=require' \
+            --env BASE_URL=http://127.0.0.1:18080 \
+            condensr-api:smoke
+          test "$(docker inspect condensr-api-direct --format '{{.Config.User}}')" = "10001:10001"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/health; then
+              break
+            fi
+            sleep 2
+          done
+          response=$(curl --fail --silent \
+            --request POST \
+            --header 'content-type: application/json' \
+            --data '{"url":"https://example.com/release-smoke"}' \
+            http://127.0.0.1:18080/api/shorten)
+          code=$(jq --raw-output '.code' <<<"$response")
+          test "$(jq --raw-output '.short_url' <<<"$response")" = "http://127.0.0.1:18080/$code"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            "http://127.0.0.1:18080/$code")" = "307"
+          test "$(docker exec condensr-postgres-smoke \
+            psql --username condensr --dbname condensr --tuples-only --no-align \
+            --command 'SELECT count(*) FROM _sqlx_migrations')" = "2"
+          docker rm --force condensr-api-direct
+
+      - name: Smoke-test Docker environment file
+        run: |
+          mkdir --parents "$RUNNER_TEMP/condensr-smoke/api"
+          printf '%s\n' \
+            'DATABASE_URL=postgres://condensr:condensr@condensr-postgres-smoke:5432/condensr?sslmode=require' \
+            'BASE_URL=http://127.0.0.1:18081' \
+            'PORT=8080' \
+            'RUST_LOG=condensr_api=info,info' \
+            > "$RUNNER_TEMP/condensr-smoke/api/condensr.env"
+          docker run --detach \
+            --name condensr-api-file \
+            --network condensr-smoke \
+            --publish 18081:8080 \
+            --env-file "$RUNNER_TEMP/condensr-smoke/api/condensr.env" \
+            condensr-api:smoke
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18081/health; then
+              break
+            fi
+            sleep 2
+          done
+          response=$(curl --fail --silent \
+            --request POST \
+            --header 'content-type: application/json' \
+            --data '{"url":"https://example.com/docker-env-file-smoke"}' \
+            http://127.0.0.1:18081/api/shorten)
+          test "$(jq --raw-output '.short_url' <<<"$response")" = \
+            "http://127.0.0.1:18081/$(jq --raw-output '.code' <<<"$response")"
+          docker rm --force condensr-api-file
+
+      - name: Verify startup failures
+        run: |
+          if docker run --rm condensr-api:smoke; then
+            exit 1
+          fi
+          if docker run --rm \
+            --network condensr-smoke \
+            --env DATABASE_URL=postgres://condensr:condensr@condensr-postgres-smoke:5432/condensr \
+            condensr-api:smoke; then
+            exit 1
+          fi
+          if docker run --rm \
+            --network condensr-smoke \
+            --env 'DATABASE_URL=postgres://condensr:condensr@condensr-postgres-smoke:5432/condensr_missing?sslmode=require' \
+            --env BASE_URL=http://127.0.0.1:18082 \
+            condensr-api:smoke; then
+            exit 1
+          fi
+          test "$(docker exec condensr-postgres-smoke \
+            psql --username condensr --dbname condensr --tuples-only --no-align \
+            --command "SELECT count(*) FROM pg_database WHERE datname = 'condensr_missing'")" = "0"
+
+      - name: Clean up smoke services
+        if: always()
+        run: |
+          docker rm --force condensr-api-direct condensr-api-file condensr-postgres-smoke 2>/dev/null || true
+          docker network rm condensr-smoke 2>/dev/null || true
+
   publish:
     name: Publish API image
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [verify, container-smoke]
     permissions:
       contents: write
       packages: write
@@ -79,6 +217,7 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -109,8 +248,22 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Verify anonymous package pull
+        run: |
+          docker logout "${{ env.REGISTRY }}"
+          for attempt in $(seq 1 12); do
+            if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
-        run: gh release create "$TAG_NAME" --verify-tag --generate-notes --title "$TAG_NAME"
+        run: |
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" --verify-tag --generate-notes --title "$TAG_NAME"
+          fi

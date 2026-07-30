@@ -32,17 +32,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ': > /dev/tcp/127.0.0.1/$${PORT:-8080}'"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   web:
     build:
-      context: apps/desktop
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/desktop/Dockerfile
     container_name: condensr-web
     restart: unless-stopped
     ports:
       - "1420:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   condensr_pgdata:

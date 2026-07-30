@@ -1,4 +1,4 @@
-FROM rust:1.94-slim AS builder
+FROM rust:1.94.1-slim-bookworm AS builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
@@ -14,7 +14,12 @@ RUN cargo build --release --locked -p condensr-api
 FROM debian:bookworm-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /build/target/release/condensr-api /usr/local/bin/condensr-api
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 condensr \
+    && useradd --uid 10001 --gid 10001 --no-create-home \
+        --home-dir /nonexistent --shell /usr/sbin/nologin condensr
+WORKDIR /app
+COPY --from=builder --chown=10001:10001 /build/target/release/condensr-api /usr/local/bin/condensr-api
+USER 10001:10001
 EXPOSE 8080
 CMD ["condensr-api"]

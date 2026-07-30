@@ -4,19 +4,13 @@ use condensr_api::{AppState, config::Config};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    #[cfg(debug_assertions)]
-    let _ = dotenvy::dotenv();
+    let app_config = Config::load()?;
 
     tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| {
-                    "condensr_api=debug,tower_http=debug,info".into()
-                }),
-        )
+        .with_env_filter(tracing_subscriber::EnvFilter::try_new(
+            &app_config.log_filter,
+        )?)
         .init();
-
-    let app_config = Config::new().unwrap();
 
     let state = AppState::new(&app_config).await?;
 
