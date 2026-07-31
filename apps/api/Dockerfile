@@ -10,9 +10,7 @@ RUN mkdir -p apps/desktop/src-tauri/src \
     && echo 'fn main() {}' > apps/desktop/src-tauri/build.rs
 ENV SQLX_OFFLINE=true
 RUN cargo build --release --locked -p condensr-api \
-    && stat --format='API binary before strip: %s bytes' /build/target/release/condensr-api \
-    && strip /build/target/release/condensr-api \
-    && stat --format='API binary after strip: %s bytes' /build/target/release/condensr-api
+    && stat --format='API binary: %s bytes' /build/target/release/condensr-api
 
 FROM debian:bookworm-slim
 RUN apt-get update \
