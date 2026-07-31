@@ -14,6 +14,8 @@ async fn internal_error_has_expected_shape() {
     let bytes = crate::common::body_bytes(res).await;
     let parsed: ApiError = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(parsed.error, "internal_server_error");
+    assert_eq!(parsed.description, "an internal server error occurred");
+    assert!(!parsed.description.contains("pool"));
     assert!(parsed.details.is_none());
 
     let raw: serde_json::Value = serde_json::from_slice(&bytes).unwrap();

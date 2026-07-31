@@ -35,6 +35,16 @@ thiserror = "2"
 chrono = { version = "0.4", features = ["serde"] }
 url = "2"
 tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", default-features = false, features = [
+    "cors",
+    "limit",
+] }
+governor = { version = "0.10", default-features = false, features = [
+    "std",
+    "dashmap",
+    "quanta",
+] }
+ipnet = "2"
 http-body-util = "0.1"
 
 [profile.dev.package."*"]

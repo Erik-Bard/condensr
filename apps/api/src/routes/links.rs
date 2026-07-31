@@ -10,10 +10,12 @@ use serde::Serialize;
 
 use crate::{AppState, models::error::AppError};
 
-pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/api/links", get(list_links))
-        .route("/{code}", get(redirect))
+pub fn api_router() -> Router<AppState> {
+    Router::new().route("/api/links", get(list_links))
+}
+
+pub fn redirect_router() -> Router<AppState> {
+    Router::new().route("/{code}", get(redirect))
 }
 
 #[derive(Debug, Serialize)]

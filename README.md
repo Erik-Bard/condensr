@@ -103,6 +103,12 @@ docker run --detach --name condensr-api --restart unless-stopped \
   ghcr.io/erik-bard/condensr:VERSION
 ```
 
+Every released image also includes opt-in exact-origin CORS and per-container
+shortening throttling. Configure them at container startup; no source checkout
+or custom Rust build is required. See the
+[API configuration guide](apps/api/README.md#optional-http-policies) for the
+environment variables, trusted-proxy behavior, and multi-replica limitation.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE). You may use, modify,

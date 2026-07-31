@@ -5,7 +5,7 @@ use axum::{
     body::Body,
     http::{Request, Response, StatusCode},
 };
-use condensr_api::AppState;
+use condensr_api::{AppState, config::HttpConfig};
 use http_body_util::BodyExt;
 use sqlx::{
     Connection, PgConnection, PgPool, Postgres, migrate::MigrateDatabase,
@@ -51,6 +51,10 @@ pub fn unique_database_url(prefix: &str) -> Url {
 }
 
 pub async fn spawn_app() -> TestApp {
+    spawn_app_with_http_config(HttpConfig::default()).await
+}
+
+pub async fn spawn_app_with_http_config(http_config: HttpConfig) -> TestApp {
     let db_url = unique_database_url("test");
     let db_name = db_url.path().trim_start_matches('/').to_string();
     let mut admin_url = server_url();
@@ -75,7 +79,7 @@ pub async fn spawn_app() -> TestApp {
     };
 
     TestApp {
-        router: condensr_api::build_router(state),
+        router: condensr_api::build_router(state, &http_config),
         pool,
         base_url,
         db_name,

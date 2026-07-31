@@ -30,6 +30,23 @@ impl AppError {
             description: description.into(),
         }
     }
+
+    pub fn too_many_requests() -> Self {
+        Self {
+            status: StatusCode::TOO_MANY_REQUESTS,
+            error: "rate_limit_exceeded",
+            description: "too many shortening requests".to_string(),
+        }
+    }
+
+    pub fn request_timeout() -> Self {
+        Self {
+            status: StatusCode::REQUEST_TIMEOUT,
+            error: "request_timeout",
+            description: "request processing exceeded the configured timeout"
+                .to_string(),
+        }
+    }
 }
 
 impl<E> From<E> for AppError
@@ -37,10 +54,12 @@ where
     E: Into<anyhow::Error>,
 {
     fn from(err: E) -> Self {
+        let error = err.into();
+        tracing::error!(error = ?error, "request failed with an internal error");
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             error: "internal_server_error",
-            description: err.into().to_string(),
+            description: "an internal server error occurred".to_string(),
         }
     }
 }

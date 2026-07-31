@@ -4,4 +4,5 @@ mod errors;
 mod health;
 mod links;
 mod redirect;
+mod security;
 mod shorten;

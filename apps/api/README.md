@@ -59,12 +59,19 @@ and `curl http://localhost:8080/health` returns `{"status":"ok"}`.
 
 Configuration comes from the process environment by default:
 
-| Variable       | Default                  | Description                                     |
-| -------------- | ------------------------ | ----------------------------------------------- |
-| `DATABASE_URL` | — (required)             | Existing PostgreSQL 14 or later database URL    |
-| `BASE_URL`     | — (required)             | HTTP(S) public origin used to build short links |
-| `PORT`         | `8080`                   | Port the API listens on                         |
-| `RUST_LOG`     | `condensr_api=info,info` | Tracing filter                                  |
+| Variable                            | Default                  | Description                                                |
+| ----------------------------------- | ------------------------ | ---------------------------------------------------------- |
+| `DATABASE_URL`                      | — (required)             | Existing PostgreSQL 14 or later database URL               |
+| `BASE_URL`                          | — (required)             | HTTP(S) public origin used to build short links            |
+| `PORT`                              | `8080`                   | Port the API listens on                                    |
+| `RUST_LOG`                          | `condensr_api=info,info` | Tracing filter                                             |
+| `CORS_ALLOWED_ORIGINS`              | — (disabled)             | Exact comma-separated origins, or `*` by itself            |
+| `SHORTEN_RATE_LIMIT_REQUESTS`       | — (disabled)             | Allowed shortening requests in each configured window     |
+| `SHORTEN_RATE_LIMIT_WINDOW_SECONDS` | `60`                     | Rate-limit window; requires the request count              |
+| `SHORTEN_RATE_LIMIT_BURST`          | up to `10`               | Immediate burst allowance; requires the request count      |
+| `RATE_LIMIT_TRUSTED_PROXY_CIDRS`    | —                        | Proxies allowed to supply the client via `X-Forwarded-For` |
+| `MAX_REQUEST_BODY_BYTES`            | `16384`                  | Shortening body limit, configurable up to 1 MiB            |
+| `REQUEST_TIMEOUT_SECONDS`           | `30`                     | Database request timeout, configurable up to 300 seconds   |
 
 `DATABASE_URL` accepts `postgres://` and `postgresql://` URLs. The database
 must already exist and be PostgreSQL 14 or later; the credentials must be able
@@ -74,6 +81,27 @@ Managed PostgreSQL TLS endpoints can use query parameters such as
 
 `BASE_URL` must be an HTTP(S) origin without a path, query, fragment,
 or embedded credentials. An explicitly supplied invalid `PORT` fails startup.
+
+### Optional HTTP policies
+
+CORS and shortening throttling are compiled into every released API image but
+are disabled until configured. No custom build or Rust feature selection is
+needed. Exact-origin CORS applies only to `/api/*`, allows `GET`, `POST`,
+`OPTIONS`, and `Content-Type`, and never enables credentialed requests. A sole
+`*` deliberately makes the unauthenticated API readable from every browser
+origin.
+
+The throttler applies only to `POST /api/shorten`, returns `429` with
+`Retry-After`, and keeps one bucket per client IP. It uses the socket peer
+unless that peer is inside `RATE_LIMIT_TRUSTED_PROXY_CIDRS`; only then does it
+walk `X-Forwarded-For` from right to left to find the first untrusted client.
+Never trust a proxy CIDR unless direct traffic to the API from that network is
+controlled.
+
+Rate-limit state is held in one API process. With multiple containers, each
+replica has an independent allowance; use a load balancer, API gateway, or
+another shared edge control when the quota must apply across the deployment.
+Malformed optional settings fail startup instead of being ignored.
 
 ## Tests
 
@@ -137,6 +165,24 @@ docker run --detach --publish 8080:8080 \
   --env BASE_URL='https://short.example' \
   ghcr.io/erik-bard/condensr:VERSION
 ```
+
+For a self-contained deployment with direct browser access and per-container
+shortening protection:
+
+```bash
+docker run --detach --publish 8080:8080 \
+  --env DATABASE_URL='postgres://user:password@database.example:5432/condensr?sslmode=require' \
+  --env BASE_URL='https://short.example' \
+  --env CORS_ALLOWED_ORIGINS='https://app.example' \
+  --env SHORTEN_RATE_LIMIT_REQUESTS=60 \
+  --env SHORTEN_RATE_LIMIT_WINDOW_SECONDS=60 \
+  --env SHORTEN_RATE_LIMIT_BURST=10 \
+  ghcr.io/erik-bard/condensr:VERSION
+```
+
+Behind a reverse proxy, additionally set its network as trusted. For example,
+`--env RATE_LIMIT_TRUSTED_PROXY_CIDRS='10.0.0.0/8'`. Requests arriving from
+other peers ignore `X-Forwarded-For`.
 
 Docker CLI `--env-file` injects a host file as process environment. The root
 `docker-compose.yml` remains a local development `db + api + web` workflow.
